@@ -50,6 +50,7 @@ OptKey = partial(t.Key, optional=True)
 SimpleType = t.Int | t.Bool | t.String | t.Float
 Filter = t.Dict({
     OptKey('in'): t.List(SimpleType),
+    OptKey('contains'): t.List(SimpleType),
     OptKey('gt'): SimpleType,
     OptKey('ge'): SimpleType,
     OptKey('lt'): SimpleType,

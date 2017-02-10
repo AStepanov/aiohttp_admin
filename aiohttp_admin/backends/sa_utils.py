@@ -100,6 +100,9 @@ def op(operation, column):
     if operation == 'in':
         def comparator(column, v):
             return column.in_(v)
+    elif operation == 'contains':
+        def comparator(column, v):
+            return column.contains(v)
     elif operation == 'like':
         def comparator(column, v):
             return column.like(v + '%')
@@ -127,23 +130,27 @@ comparator_map = {
     sa.sql.sqltypes.Integer: ('eq', 'ne', 'lt', 'le', 'gt', 'ge', 'in'),
     sa.sql.sqltypes.Float: ('eq', 'ne', 'lt', 'le', 'gt', 'ge'),
     sa.sql.sqltypes.Date: ('eq', 'ne', 'lt', 'le', 'gt', 'ge'),
+    sa.sql.sqltypes.ARRAY: ('eq', 'in', 'contains'),
 }
 
 
 def check_comparator(column, comparator):
-    if type(column.type) not in comparator_map:
+    check_type = sa.sql.sqltypes.ARRAY if isinstance(column.type, sa.sql.sqltypes.ARRAY) else type(column.type)
+
+    if check_type not in comparator_map:
         msg = 'Filtering for column type {} not supported'.format(column.type)
         raise JsonValidaitonError(msg)
 
-    if comparator not in comparator_map[type(column.type)]:
+    if comparator not in comparator_map[check_type]:
         msg = 'Filtering for column type {} not supported'.format(column.type)
         raise JsonValidaitonError(msg)
 
 
 def check_value(column, value):
     trafaret = build_trafaret(column.type)
+
     try:
-        if isinstance(value, list):
+        if isinstance(value, list) and not isinstance(column.type, sa.sql.sqltypes.ARRAY):
             value = [trafaret.check_and_return(v) for v in value]
         else:
             value = trafaret.check_and_return(value)
